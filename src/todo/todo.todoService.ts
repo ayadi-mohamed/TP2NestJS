@@ -16,34 +16,27 @@ import { FindTodoDto } from './todo.findDto';
 export class TodoService {
  
     private todos: TodoModel[] = []
- //private uuidProv: uuidProvider,
     constructor( @InjectRepository(todoEntity)
     private  postRepository: Repository<todoEntity>) {
 
     }
 
-    findTodo(id: string): TodoModel {
-        console.log(id);
-        if (!id) throw new NotFoundException();
-        const todo = this.todos.find((todo) => todo.id == id);
-        //throw exception if not found
-        if (!todo) throw new NotFoundException();
-        return todo;
-    }
-
-    getTodo(): TodoModel[] {
+    //******************************************************* Without DB *********************************************
+    listTodosLocal(): TodoModel[] {
         // Todo 2 : Get the todo liste
         console.log('getTodos')
         return(this.todos);
     }
-    async getTodoDB(): Promise<todoEntity[]> {
-        // Todo 2 : Get the todo liste
-        console.log('getTodosDB')
-        return await this.postRepository.find();
-        }
+    findTodoLocal(id: string): TodoModel {
+        console.log(id);
+        if (!id) throw new NotFoundException();
+        const todo = this.todos.find((todo) => todo.id == id);
+        //throw exception if not found
+        if (!todo) throw new NotFoundException();
+        return todo;
+    }
 
-
-    postTodoWithDTO(body: todoDto): TodoModel {
+    addTodoLocal(body: todoDto): TodoModel {
         if (!body.name) throw new NotFoundException();
         if (!body.description) throw new NotFoundException();
         const todo = new TodoModel();
@@ -54,63 +47,105 @@ export class TodoService {
 
         return todo;
     }
-    
-    async postTodoWithDb(body: todoDto): Promise<todoEntity> {
+    updateTodoLocal(id: string, body: todoUpdateDto): TodoModel{
+        console.log(id);
+        if (!id) throw new NotFoundException();
+        const todo = this.todos.find((todo) => todo.id == id);
+        //throw exception if not found
+        if (!todo) throw new NotFoundException();
+
         if (!body.name) throw new NotFoundException();
         if (!body.description) throw new NotFoundException();
+        if (!body.status) throw new NotFoundException();
+        
+        todo.description = body.description;
+        todo.name = body.name;
+        if(! (body.status.match('actif') ||
+        (body.status.match('waiting')) ||
+        (body.status.match('done')) ))
+           throw new NotFoundException("invalid status");
+        todo.status = body.status;
+        return todo;
+    }
+
+    deleteTodoLocal(id: string): TodoModel {
+        console.log(id);
+        if (!id) throw new NotFoundException();
+        const todo = this.todos.find((todo) => todo.id == id);
+        //throw exception if not found
+        if (!todo) throw new NotFoundException();
+        const indexOfTodo = this.todos.indexOf(todo);
+        this.todos.splice(indexOfTodo,1);
+        return todo;
+    }
+
+    //******************************************************* With DB *********************************************
+
+    async listTodosDb(): Promise<todoEntity[]> {
+        // Todo 2 : Get the todo liste
+        console.log('listTodosDb')
+        return await this.postRepository.find();
+        }
+    
+    async findTodoDb(id:string): Promise<todoEntity> {
+        // Todo 2 : Get the todo liste
+        console.log('findTodoDb')
+        return await this.postRepository.findOneBy({id});
+        }
+    
+    async addTodoDb(body: todoDto): Promise<todoEntity> {
         const todo = new TodoModel();
         todo.description = body.description;
         todo.name = body.name;
         console.log(todo);
-        this.todos.push(todo);
         return await this.postRepository.save(todo);
     }
 
-
-    deleteTodo(id: string): TodoModel {
+    async updateTodoDb(id: string, body: todoUpdateDto): Promise<todoEntity>{
         console.log(id);
-        if (!id) throw new NotFoundException();
-        const todo = this.todos.find((todo) => todo.id == id);
-        //throw exception if not found
-        if (!todo) throw new NotFoundException();
-        const indexOfTodo = this.todos.indexOf(todo);
-        this.todos.splice(indexOfTodo,1);
-        return todo;
+        console.log(body);
+        const todo = await this.postRepository.findOneBy({id});
+        if (!todo) {
+            console.error("Todo doesn't exist");
+        }
+        await this.postRepository.update(id, body);
+        return await this.postRepository.findOneBy({id});
+  
+        /*
+        const newTodo = await this.postRepository.preload({ id, ...body });
+        if (newTodo) {
+            return this.postRepository.save(newTodo);
+        } 
+        else {
+            throw new NotFoundException('Todo not found to be updated!');
+        }
+        */
     }
 
-    async deleteTodoWithDb(id: string): Promise<UpdateResult> {
-        console.log(id);
-        if (!id) throw new NotFoundException();
-        const todo = this.todos.find((todo) => todo.id == id);
-        //throw exception if not found
-        if (!todo) throw new NotFoundException();
-        const indexOfTodo = this.todos.indexOf(todo);
-        this.todos.splice(indexOfTodo,1);
+    async deleteTodoDb(id: string): Promise<UpdateResult> {
         const result = await this.postRepository.softDelete(id);
-        if (result.affected) {
-            return result;
+        if (!result.affected) {
+            throw new NotFoundException('Todo not found!');;
         }
-        throw new NotFoundException('Todo not found already!');
-
-
+        return result;
     }
 
-    async restoreTodo(id:string) {
+    async restoreTodoDb(id:string): Promise<UpdateResult> {
         const result = await this.postRepository.restore(id);
-        if (result.affected) {
-            return result;
+        if (!result.affected) {
+            throw new NotFoundException('Todo not found!');;
         }
-        throw new NotFoundException('Todo not found!');
+        return result;
     }
 
-    async countByStatus(){
+    async countByStatusDb(status:TodoStatusEnum){
         const qb=this.postRepository.createQueryBuilder('todo');
         qb.select('todo.status, COUNT(todo.status) as count');
-        qb.groupBy('todo.status');
+        qb.where('todo.status LIKE :status', {status: status})
         return qb.getRawMany();
     }
 
-    async getTodos(): Promise<todoEntity[]> {
+    async getTodosWithPaginationDb(): Promise<todoEntity[]> {
         return await this.postRepository.find();
     }
     pagination(data: [any, any],page: number,limit: number) {
@@ -130,7 +165,7 @@ export class TodoService {
     }
 
 
-    async findByCriterias(findTodoDto?:FindTodoDto){
+    async findByCriteriasDb(findTodoDto?:FindTodoDto){
         const take=findTodoDto.take || 2;
         const page=findTodoDto.page || 1;
         const skip=(page-1)*take;
@@ -153,50 +188,5 @@ export class TodoService {
         }
         return this.pagination(data,page,take); 
     }
-
-
-
-
-    
-
-    updateTodoWithDTO(id: string, body: todoUpdateDto): TodoModel{
-        console.log(id);
-        if (!id) throw new NotFoundException();
-        const todo = this.todos.find((todo) => todo.id == id);
-        //throw exception if not found
-        if (!todo) throw new NotFoundException();
-
-        if (!body.name) throw new NotFoundException();
-        if (!body.description) throw new NotFoundException();
-        if (!body.status) throw new NotFoundException();
-        
-        todo.description = body.description;
-        todo.name = body.name;
-        if(! (body.status.match('actif') ||
-        (body.status.match('waiting')) ||
-        (body.status.match('done')) ))
-           throw new NotFoundException("invalid status");
-        todo.status = body.status;
-        return todo;
-    }
-    async updateTodoWithDb(id: string, body: todoUpdateDto): Promise<todoEntity>{
-        console.log(id);
-   
-        console.log(body)
-        const newTodo = await this.postRepository.preload({ id, ...body });
-        if (newTodo) {
-            return this.postRepository.save(newTodo);
-        } 
-        else {
-            throw new NotFoundException('Todo not found to be updated!');
-        }
-    }
-    /*getUuid(): string {
-        console.log('getUuid');
-      return this.uuidProv.getUuid();
-    
-    }
-    */
-
 
 }

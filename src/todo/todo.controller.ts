@@ -25,74 +25,29 @@ export class TodoController {
     getTodos() {
         // Todo 2 : Get the todo liste
         console.log('getTodos')
-        return(this.toDoModuleService.getTodo());
+        return(this.toDoModuleService.listTodosLocal());
     }
 
-
-    //without DTO
-    @Post('nodto')
-    addTodo(@Body() body){
-        if (!body.name) throw new NotFoundException();
-        if (!body.description) throw new NotFoundException();
-        const todo = new TodoModel();
-        todo.description = body.description;
-        todo.name = body.name;
-        console.log(todo);
-        this.todos.push(todo);
-        return todo;
-    }
-    
-    @Get('byid')
-    findTodo(@Query('id') id) {
+    @Get('byid/:id')
+    findTodo(@Param('id') id:string) {
         console.log(id);
-        return this.toDoModuleService.findTodo(id);
+        return this.toDoModuleService.findTodoLocal(id);
     }
 
-    @Delete('byid')
-    deleteTodo(@Query('id') id) {
-        return(this.toDoModuleService.deleteTodo(id));
+    @Delete('delete/:id')
+    deleteTodo(@Param('id') id:string) {
+        return(this.toDoModuleService.deleteTodoLocal(id));
     }
 
-    @Put('byid')
-    updateTodo(@Query('id') id,@Body() body) {
-        console.log(id);
-        if (!id) throw new NotFoundException();
-        console.log(1)
-        const todo = this.findTodo(id)
-        //throw exception if not found
-        if (!todo) throw new NotFoundException();
-        console.log(2)
-        if (!body.name) throw new NotFoundException();
-        if (!body.description) throw new NotFoundException();
-        if (!body.status) throw new NotFoundException();
-        
-        todo.description = body.description;
-        todo.name = body.name;
-        console.log(Object.values(body.status))
-        if(! (body.status.match('actif') ||
-        (body.status.match('waiting')) ||
-        (body.status.match('done')) ))
-           throw new NotFoundException("invalid status");
-        
-        todo.status = body.status;
-        return todo;
-    }
-
-    //with DTO
-    @Post('byiddto')
+    @Post('add')
     addTodoDto(@Body() body:todoDto){
-        return (this.toDoModuleService.postTodoWithDTO(body));
+        return (this.toDoModuleService.addTodoLocal(body));
     }
     
 
-    @Put('byiddto')
-    updateTodoDto(@Query('id') id,@Body() body:todoUpdateDto) {
-       return(this.toDoModuleService.updateTodoWithDTO(id,body));
+    @Put('update/:id')
+    updateTodoDto(@Param('id') id:string,@Body() body:todoUpdateDto) {
+       return(this.toDoModuleService.updateTodoLocal(id,body));
     }
- 
-  /*  @Get('/id/:id')
-    getTodoById(@Param('id') id:string) {
-      return this.toDoModuleService.getTodoById(id);
-*/
 
 }   

@@ -1,9 +1,8 @@
 import { IsNotEmpty, MaxLength, MinLength } from "class-validator";
-import { ExceptionEnum } from "./todo.exceptionEnum";
 
 export class todoDto {
     @IsNotEmpty({
-        message: ExceptionEnum.isEmpty
+        message:"name field is empty"
     })
     @MinLength(3)
     @MaxLength(10)

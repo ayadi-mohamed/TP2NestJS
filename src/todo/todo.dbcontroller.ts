@@ -20,48 +20,50 @@ export class TodoControllerDB {
     constructor(private toDoModuleService: TodoService) {}
 
 
-    @Get('allDB')
+    @Get('all')
     getTodosDB() {
         // Todo 2 : Get the todo liste
         console.log('getTodosDB')
-        return(this.toDoModuleService.getTodoDB());
+        return(this.toDoModuleService.listTodosDb());
     }
 
+    @Get('byid/:id')
+    findTodo(@Param('id') id:string) {
+        console.log(id);
+        return this.toDoModuleService.findTodoDb(id);
+    }
 
-    
-    //with db
-
-    @Post('adddb')
+    @Post('add')
     addTodoDb(@Body() body:todoDto){
-        return (this.toDoModuleService.postTodoWithDb(body));
+        return (this.toDoModuleService.addTodoDb(body));
     }
-    @Put('updatedb')
-    updateTodoDb(@Query('id') id,@Body() body:todoUpdateDto) {
-       return(this.toDoModuleService.updateTodoWithDb(id,body));
+    @Put('update/:id')
+    updateTodoDb(@Param('id') id:string,@Body() body:todoUpdateDto) {
+       return(this.toDoModuleService.updateTodoDb(id,body));
        
     }
-    @Delete('byid')
-    deleteDb(@Query('id') id) {
-        return(this.toDoModuleService.deleteTodoWithDb(id));
+    @Delete('delete/:id')
+    deleteDb(@Param('id') id:string) {
+        return(this.toDoModuleService.deleteTodoDb(id));
     }
-    @Get('/restore/:id')
+    @Get('restore/:id')
     restoreTodo(@Param('id') id:string) {
-      return this.toDoModuleService.restoreTodo(id);
+      return this.toDoModuleService.restoreTodoDb(id);
     } 
 
-    @Get('/count')
-    countByStatus(): any {
-      return this.toDoModuleService.countByStatus();
+    @Get('count/:status')
+    countByStatus(@Param('status') status:TodoStatusEnum): any {
+      return this.toDoModuleService.countByStatusDb(status);
     }
 
-    @Get('/allPag')
+    @Get('allpag')
     getTodoss(): Promise<todoEntity[]> {
-      return this.toDoModuleService.getTodos();
+      return this.toDoModuleService.getTodosWithPaginationDb();
     }
 
-    @Get('/criterias')
+    @Get('search')
     findByCriterias(@Query() findTodoDto: FindTodoDto) {
-      return this.toDoModuleService.findByCriterias(findTodoDto);
+      return this.toDoModuleService.findByCriteriasDb(findTodoDto);
     }
 
   

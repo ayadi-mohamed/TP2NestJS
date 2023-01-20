@@ -10,6 +10,5 @@ export class todoEntity extends timestamp {
     @Column()
     description: string;
     @Column({ type: 'enum', enum: TodoStatusEnum, default: TodoStatusEnum.waiting })
-   
     status: TodoStatusEnum;
 }
