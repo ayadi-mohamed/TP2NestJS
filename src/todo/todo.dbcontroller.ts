@@ -9,7 +9,7 @@ import { todoUpdateDto } from './todo.todoUpdateDto';
 import {TodoService} from "./todo.todoService";
 import { skillsDto } from './todo.skills.Dto';
 import { OurPipePipe } from 'src/pipes/our-pipe.pipe';
-import { FindTodoDto } from './todo.findDto';
+import { AllTodoDto, FindTodoDto } from './todo.findDto';
 import { todoEntity } from './todo.todoEntity';
 @Controller({
     path: 'todo',
@@ -57,12 +57,12 @@ export class TodoControllerDB {
     }
 
     @Get('allpag')
-    getTodoss(): Promise<todoEntity[]> {
-      return this.toDoModuleService.getTodosWithPaginationDb();
+    getTodoss(@Body() allTodoDto: AllTodoDto) {
+      return this.toDoModuleService.getTodosWithPaginationDb(allTodoDto);
     }
 
     @Get('search')
-    findByCriterias(@Query() findTodoDto: FindTodoDto) {
+    findByCriterias(@Body() findTodoDto: FindTodoDto) {
       return this.toDoModuleService.findByCriteriasDb(findTodoDto);
     }
 

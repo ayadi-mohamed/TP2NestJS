@@ -14,4 +14,12 @@ export class FindTodoDto {
     
     page?: number;
   }
+  export class AllTodoDto {
+
+    
+  
+    take?: number;
+    
+    page?: number;
+  }
   

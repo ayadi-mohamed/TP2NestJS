@@ -10,7 +10,8 @@ import { uuidProvider } from 'src/common/common.uuidProvider';
 import { todoEntity } from './todo.todoEntity';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, UpdateResult } from 'typeorm';
-import { FindTodoDto } from './todo.findDto';
+import { AllTodoDto, FindTodoDto } from './todo.findDto';
+import { skip } from 'rxjs/operators';
 
 @Injectable()
 export class TodoService {
@@ -145,9 +146,7 @@ export class TodoService {
         return qb.getRawMany();
     }
 
-    async getTodosWithPaginationDb(): Promise<todoEntity[]> {
-        return await this.postRepository.find();
-    }
+   
     pagination(data: [any, any],page: number,limit: number) {
         const [result,total]=data;
         const lastPage = Math.ceil(total/limit);
@@ -168,6 +167,7 @@ export class TodoService {
     async findByCriteriasDb(findTodoDto?:FindTodoDto){
         const take=findTodoDto.take || 2;
         const page=findTodoDto.page || 1;
+
         const skip=(page-1)*take;
         let data:any;
         if (findTodoDto.statut || findTodoDto.texte){
@@ -187,6 +187,23 @@ export class TodoService {
             data = await this.postRepository.findAndCount({order:{createdAt:'DESC'}, take:take, skip:skip});
         }
         return this.pagination(data,page,take); 
+    }
+    async getTodosWithPaginationDb(allTodoDto?:AllTodoDto) {
+        let data:any;
+
+        const take=allTodoDto.take || 2;
+        const page=allTodoDto.page || 1;
+        const skip=(page-1)*take;
+
+        const qb=this.postRepository.createQueryBuilder('todo');
+        qb.skip(skip);
+
+            qb.take(take);
+        const [result,total]=await qb.getManyAndCount();
+         data = [result,total];
+        data = await this.postRepository.findAndCount({order:{createdAt:'DESC'}, take:take , skip:skip });
+        return this.pagination(data,page,take); 
+
     }
 
 }
